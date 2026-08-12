@@ -27,40 +27,62 @@ def clean_text(text: str) -> str:
     text = re.sub(r"[ \t]{2,}", " ", text)
     return text.strip()
 
+def load_existing() -> tuple[list[dict], int]:
+    """Load existing articles (if any) and return them plus the next free id."""
+    if not OUT_PATH.exists():
+        return [], 0
+
+    with open(OUT_PATH, "r", encoding="utf-8") as f:
+        existing = json.load(f)
+
+    next_id = max((a["id"] for a in existing), default=-1) + 1
+    return existing, next_id
+
 
 def main() -> None:
-    """Load Wikipedia articles, clean them, and save to JSON."""
+    """Load new Wikipedia articles, clean them, and append to existing JSON."""
+    existing_articles, next_id = load_existing()
+    print(f"Found {len(existing_articles)} existing articles. New ids start at {next_id}.")
+
+    # Rebuild seen_hashes from existing articles so we don't re-add duplicates
+    seen_hashes = {
+        hashlib.md5(a["text"][:200].encode("utf-8")).hexdigest()
+        for a in existing_articles
+    }
+
     ds = load_dataset("wikimedia/wikipedia", "20231101.en", split="train", streaming=True)
-    
-    seen_hashes = set()
-    articles = []
-    
+
+    new_articles = []
+    article_id = next_id
+
     for row in ds:
-        if len(articles) >= N_ARTICLES:
+        if len(new_articles) >= N_ARTICLES:
             break
-        article_id = len(articles)
+
         title = row["title"].strip()
         text = clean_text(row["text"])
-        
+
         if len(text.split()) < MIN_WORDS:
             continue
-        
+
         fingerprint = hashlib.md5(text[:200].encode("utf-8")).hexdigest()
         if fingerprint in seen_hashes:
             continue
         seen_hashes.add(fingerprint)
-        
-        articles.append({"id": article_id, "title": title, "text": text})
-        
-        if len(articles) % 100 == 0:
-            print(f"Loaded {len(articles)} articles")
-        
-    print(f"Loaded {len(articles)} articles in total")
-    
+
+        new_articles.append({"id": article_id, "title": title, "text": text})
+        article_id += 1
+
+        if len(new_articles) % 100 == 0:
+            print(f"Loaded {len(new_articles)} new articles")
+
+    print(f"Loaded {len(new_articles)} new articles in total")
+
+    all_articles = existing_articles + new_articles
     with open(OUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(articles, f, ensure_ascii=False, indent=2)
-        
-    print(f"Saved {len(articles)} articles to {OUT_PATH}")
+        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+
+    print(f"Saved {len(all_articles)} total articles to {OUT_PATH}")
     
 if __name__ == "__main__":
     main()
