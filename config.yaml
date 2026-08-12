@@ -3,3 +3,9 @@ Chunking:
   Overlap: 50
 
   Savepath: "Datasets\\chunks.json"
+
+Embedding:
+  Model: "BAAI/bge-small-en-v1.5"
+  Batch: 32
+
+  Savepath: "Datasets\\embeddings.npy"
