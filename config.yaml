@@ -10,8 +10,8 @@ HNSW:
   Distance Metric: cosine
   EF_construct: 200
   EF_search: 60
-  top_k: 5
   Max Edges: 16
-  number of elements: 48031
-  dim: 384
   Savepath: Retrieval\hnsw_index.bin
+  dim: 384
+  number of elements: 48031
+  top_k: 5
