@@ -125,10 +125,20 @@ if __name__ == "__main__":
         
     print(f"Loaded {len(articles)} articles.")
     
-    # Chunk the articles and save to a new JSON file
-    chunks = []
+    # Load existing chunks (if any) so we only process new articles, or start fresh
+    if CHUNKS.exists():
+        with open(CHUNKS, 'r', encoding= 'utf-8') as f:
+            chunks = json.load(f)
     
-    for article_index, article in enumerate(articles):
+    else: chunks = []
+    
+    already_chunked = [chunk["article_id"] for chunk in chunks]
+    new_articles  = [(i, artcle) for i, artcle in enumerate(articles) if i not in already_chunked]
+    
+    print(f"{len(already_chunked)} articles already chunked. "
+          f"{len(new_articles)} new articles to process.")
+
+    for article_index, article in new_articles:
         splits = recursive_chunking(article["text"], CHUNK_SIZE, OVERLAP)
         
         for i, split in enumerate(splits):
