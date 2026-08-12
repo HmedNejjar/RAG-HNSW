@@ -5,7 +5,6 @@ import hnswlib
 
 from pathlib import Path
 ROOT = Path(__file__).parent
-
 # -------- CONFIG --------
 with open(ROOT / "config.yaml", 'r') as f:
     config = yaml.safe_load(f)
@@ -44,7 +43,7 @@ def build_tree() -> None:
     
     # Initialize HNSW index
     index = hnswlib.Index(space= SPACE, dim= dim)
-    index.init_index(max_elements= num_elements, M= M, ef_construction= EF)
+    index.init_index(max_elements= 2*num_elements, M= M, ef_construction= EF)
     
     # Add embeddings to the index
     ids = np.arange(num_elements)
@@ -54,6 +53,40 @@ def build_tree() -> None:
     index.save_index(str(HNSW_PATH))
     
     print(f"Saved index to {HNSW_PATH}")
+    
+def update(index: hnswlib.Index, new_embeddings_path: str | Path, new_chunks: list[dict]):
+    """Updates an existing HNSW index with new embeddings."""
+    new_embeddings = np.load(new_embeddings_path)
+    num_new_elements, dim = new_embeddings.shape
+    
+    assert new_embeddings.shape[0] == len(new_chunks), (f"Mismatch: {num_new_elements} new embeddings vs {len(new_chunks)} new chunks.")
+    
+    # Load existing index
+    index.load_index(str(HNSW_PATH), max_elements= index.get_max_elements())
+    
+    # Check if index already reached max elements
+    current_num_elements = index.get_current_count()
+    if current_num_elements + num_new_elements > index.get_max_elements():
+        index.resize_index(2*(index.get_current_count() + num_new_elements))
+        
+    # Add to the index
+    new_ids = np.arange(current_num_elements, current_num_elements + num_new_elements)
+    index.add_items(new_embeddings, new_ids)
+    
+    # Append to the existing metadata so ids still resolve to text
+    with open(CHUNKS_PATH, 'r', encoding= 'utf-8') as f:
+        chunks = json.load(f)
+        
+    chunks.extend(new_chunks)
+    
+    with open(CHUNKS_PATH, 'w', encoding= 'utf-8') as f:
+        json.dump(chunks, f, ensure_ascii= False, indent= 2)
+        
+    # Save the index
+    index.save_index(str(HNSW_PATH))
+    
+    print(f"Added {num_new_elements} new items. Index now holds {index.get_current_count()} total.")
+    
     
 if __name__ == "__main__":
     build_tree()
