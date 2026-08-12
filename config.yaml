@@ -9,3 +9,10 @@ Embedding:
   Batch: 32
 
   Savepath: "Datasets\\embeddings.npy"
+
+HNSW:
+  Distance Metric: "cosine"
+  Max Edges: 16
+  EF: 200
+
+  Savepath: "Retrieval\\hnsw_index.bin"
