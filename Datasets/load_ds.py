@@ -38,7 +38,7 @@ def main() -> None:
     for row in ds:
         if len(articles) >= N_ARTICLES:
             break
-        id = row["id"]
+        article_id = len(articles)
         title = row["title"].strip()
         text = clean_text(row["text"])
         
@@ -50,7 +50,7 @@ def main() -> None:
             continue
         seen_hashes.add(fingerprint)
         
-        articles.append({"id": id, "title": title, "text": text})
+        articles.append({"id": article_id, "title": title, "text": text})
         
         if len(articles) % 100 == 0:
             print(f"Loaded {len(articles)} articles")

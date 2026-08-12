@@ -128,13 +128,13 @@ if __name__ == "__main__":
     # Chunk the articles and save to a new JSON file
     chunks = []
     
-    for article in articles:
+    for article_index, article in enumerate(articles):
         splits = recursive_chunking(article["text"], CHUNK_SIZE, OVERLAP)
         
         for i, split in enumerate(splits):
             chunks.append({
-                "chunk_id": f"{article["id"]}_{i}",
-                "article_id": article["id"],
+                "chunk_id": len(chunks),
+                "article_id": article_index,
                 "title": article["title"],
                 "chunk_index": i,
                 "text": split
