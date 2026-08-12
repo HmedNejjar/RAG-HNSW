@@ -1,0 +1,5 @@
+Chunking:
+  Chunk size: 400
+  Overlap: 50
+
+  Savepath: "Datasets\\chunks.json"
