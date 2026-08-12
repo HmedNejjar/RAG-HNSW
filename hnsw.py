@@ -4,7 +4,7 @@ import numpy as np
 import hnswlib
 
 from pathlib import Path
-ROOT = Path(__file__).parent.parent
+ROOT = Path(__file__).parent
 
 # -------- CONFIG --------
 with open(ROOT / "config.yaml", 'r') as f:
@@ -20,7 +20,7 @@ HNSW_PATH = ROOT / HNSW["Savepath"]
 
 SPACE = HNSW["Distance Metric"]
 M = HNSW["Max Edges"]
-EF = HNSW["EF"]
+EF = HNSW["EF_construct"]
 # -------------------------
 
 
@@ -35,6 +35,12 @@ def build_tree() -> None:
     
     num_elements, dim = embeddings.shape
     print(f"Building HNSW index: {num_elements} vectors, dim={dim}")
+    
+    # Saving to config file
+    config["HNSW"]["number of elements"] = num_elements
+    config["HNSW"]["dim"] = dim
+    with open(ROOT / "config.yaml", "w") as f:
+        yaml.safe_dump(config, f)
     
     # Initialize HNSW index
     index = hnswlib.Index(space= SPACE, dim= dim)
