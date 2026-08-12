@@ -54,39 +54,45 @@ def build_tree() -> None:
     
     print(f"Saved index to {HNSW_PATH}")
     
-def update(index: hnswlib.Index, new_embeddings_path: str | Path, new_chunks: list[dict]):
+def update(index: hnswlib.Index):
     """Updates an existing HNSW index with new embeddings."""
-    new_embeddings = np.load(new_embeddings_path)
-    num_new_elements, dim = new_embeddings.shape
-    
-    assert new_embeddings.shape[0] == len(new_chunks), (f"Mismatch: {num_new_elements} new embeddings vs {len(new_chunks)} new chunks.")
-    
-    # Load existing index
-    index.load_index(str(HNSW_PATH), max_elements= index.get_max_elements())
-    
-    # Check if index already reached max elements
-    current_num_elements = index.get_current_count()
-    if current_num_elements + num_new_elements > index.get_max_elements():
-        index.resize_index(2*(index.get_current_count() + num_new_elements))
-        
-    # Add to the index
-    new_ids = np.arange(current_num_elements, current_num_elements + num_new_elements)
-    index.add_items(new_embeddings, new_ids)
-    
-    # Append to the existing metadata so ids still resolve to text
+    # Load new embeddings and chunks
     with open(CHUNKS_PATH, 'r', encoding= 'utf-8') as f:
         chunks = json.load(f)
-        
-    chunks.extend(new_chunks)
+    embeddings = np.load(EMBED_PATH)
     
-    with open(CHUNKS_PATH, 'w', encoding= 'utf-8') as f:
-        json.dump(chunks, f, ensure_ascii= False, indent= 2)
+    assert embeddings.shape[0] == len(chunks), (f"Mismatch: {embeddings.shape[0]} embeddings vs {len(chunks)} chunks.")
+    
+    # Load the hnsw index
+    index.load_index(str(HNSW_PATH), max_elements= index.get_max_elements())
+    current_num_elements = index.get_current_count()
+    num_new = embeddings.shape[0]
+    
+    # Check whether we exceed max num of elements
+    if num_new == 0:
+        print("No new embeddings to add.")
+        return
+    
+    if current_num_elements + num_new >= index.get_max_elements():
+        index.resize_index(2*(current_num_elements + num_new))
         
-    # Save the index
+    # Arrange the ids and add embeddings to index
+    new_ids = np.arange(current_num_elements, current_num_elements + num_new)
+    index.add_items(embeddings, new_ids)
+    
+    # Save the index to disk
     index.save_index(str(HNSW_PATH))
     
-    print(f"Added {num_new_elements} new items. Index now holds {index.get_current_count()} total.")
+    # Update config params
+    config["HNSW"]["number of elements"] = index.get_current_count()
+    with open(ROOT / "config.yaml", "w") as f:
+        yaml.safe_dump(config, f)
     
+    print(f"Added {num_new} new items. Index now holds {index.get_current_count()} total.")
     
 if __name__ == "__main__":
-    build_tree()
+    if HNSW_PATH.exists:
+        index = hnswlib.Index(space= SPACE, dim= HNSW["dim"])
+        update(index)
+    else:
+        build_tree()
