@@ -63,8 +63,6 @@ def update(index: hnswlib.Index):
     
     assert embeddings.shape[0] == len(chunks), (f"Mismatch: {embeddings.shape[0]} embeddings vs {len(chunks)} chunks.")
     
-    # Load the hnsw index
-    index.load_index(str(HNSW_PATH))
     current_num_elements = index.get_current_count()
     new_embeddings = embeddings[current_num_elements:]
     num_new = new_embeddings.shape[0]
@@ -96,6 +94,7 @@ if __name__ == "__main__":
 
     if index_file_exists:
         index = hnswlib.Index(space=SPACE, dim=HNSW["dim"])
+        index.load_index(str(HNSW_PATH))
         print("Updating tree")
         update(index)
     else:

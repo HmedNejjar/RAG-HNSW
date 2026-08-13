@@ -9,7 +9,6 @@ import yaml
 import json
 import hnswlib
 from sentence_transformers import SentenceTransformer
-from hnsw import update
 
 HNSW_SPACE = Literal["l2", "ip", "cosine"]
 
@@ -26,7 +25,6 @@ class Retriever:
         
         self.index = hnswlib.Index(space=space, dim=dim)
         self.index.load_index(str(HNSW_savepath))
-        update(self.index)
         self.index.set_ef(ef_search)
         
     def retrieve(self, query: str) -> list[dict]:

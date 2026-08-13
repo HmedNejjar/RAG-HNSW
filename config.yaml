@@ -13,5 +13,10 @@ HNSW:
   Max Edges: 16
   Savepath: Retrieval\hnsw_index.bin
   dim: 384
-  number of elements: 48031
-  top_k: 5
+  number of elements: 48033
+  top_k: 3
+
+LLM:
+  Model: qwen3:1.7b
+  URL: http://localhost:11434/api/generate
+  System Prompt: You are answering a question using knowledge and context. Never mention the context, unless it doesn't have enough infromations, then say so explicitly rather than guessing.
