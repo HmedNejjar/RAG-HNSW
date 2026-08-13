@@ -64,9 +64,10 @@ def update(index: hnswlib.Index):
     assert embeddings.shape[0] == len(chunks), (f"Mismatch: {embeddings.shape[0]} embeddings vs {len(chunks)} chunks.")
     
     # Load the hnsw index
-    index.load_index(str(HNSW_PATH), max_elements= index.get_max_elements())
+    index.load_index(str(HNSW_PATH))
     current_num_elements = index.get_current_count()
-    num_new = embeddings.shape[0]
+    new_embeddings = embeddings[current_num_elements:]
+    num_new = new_embeddings.shape[0]
     
     # Check whether we exceed max num of elements
     if num_new == 0:
@@ -78,7 +79,7 @@ def update(index: hnswlib.Index):
         
     # Arrange the ids and add embeddings to index
     new_ids = np.arange(current_num_elements, current_num_elements + num_new)
-    index.add_items(embeddings, new_ids)
+    index.add_items(new_embeddings, new_ids)
     
     # Save the index to disk
     index.save_index(str(HNSW_PATH))
@@ -91,8 +92,12 @@ def update(index: hnswlib.Index):
     print(f"Added {num_new} new items. Index now holds {index.get_current_count()} total.")
     
 if __name__ == "__main__":
-    if HNSW_PATH.exists:
-        index = hnswlib.Index(space= SPACE, dim= HNSW["dim"])
+    index_file_exists = HNSW_PATH.is_file() and HNSW_PATH.stat().st_size > 0
+
+    if index_file_exists:
+        index = hnswlib.Index(space=SPACE, dim=HNSW["dim"])
+        print("Updating tree")
         update(index)
     else:
+        print("building tree")
         build_tree()

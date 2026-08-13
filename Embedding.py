@@ -47,10 +47,15 @@ if __name__ == "__main__":
         print("Nothing new to embed.")
     
     else:
-        texts = [c["text"] for c in chunks]
+        texts = [c["text"] for c in new_chunks]
     
         embeddings = embed(texts, MODEL, BATCH)
-    
+
+        if existing is None:
+            final_embeddings = embeddings
+        else:
+            final_embeddings = np.vstack([existing, embeddings])
+
         # Save embeddings to a file
-        np.save(SAVE_EMBED, embeddings)
+        np.save(SAVE_EMBED, final_embeddings)
         print(f"Saved to {SAVE_EMBED}")
