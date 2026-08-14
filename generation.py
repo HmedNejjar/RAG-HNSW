@@ -5,6 +5,7 @@ import requests
 from typing import Generator
 from pathlib import Path
 from Retrieval.Retrieve import Retriever
+from ingest import ingest_article
 
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT))
@@ -20,7 +21,9 @@ LLM = config["LLM"]
 
 LLM_MODEL = LLM["Model"]
 LLM_URL = LLM["URL"]
-SYS_PROMPT = LLM["System Prompt"]
+PROMPTS = {"Default": LLM["Prompts"]["Default"],
+           "Reformat": LLM["Prompts"]["Reformat"]}
+
 EMBED_MODEL = EMBED["Model"]
 
 EMBED_PATH = ROOT / EMBED["Savepath"]
@@ -34,19 +37,23 @@ NUM_ELEMENTS = HNSW["number of elements"]
 DIM = HNSW["dim"]
 
 class LLM_RAG:
-    def __init__(self, llm_name: str, llm_url: str) -> None:
+    def __init__(self, llm_name: str, llm_url: str, prompts: dict[str, str]) -> None:
         
         with open(CHUNKS_PATH, 'r') as f:
             chunks = json.load(f)
 
         self.llm_name = llm_name
         self.llm_url = llm_url
+        self.prompts = prompts
         self.retriever = Retriever(EMBED_MODEL, chunks, HNSW_PATH, SPACE, EF ,DIM, K)
         
-    def format(self, query: str, retrieved_chunks: list[dict]) -> str:
+    def format(self, query: str, retrieved_chunks: list[dict] | None) -> str:
         """Format the query and retrieved chunks into a prompt for the LLM."""
+        if not retrieved_chunks:
+            return f"{self.prompts["Reformat"]}\n\nQuestion: {query}\nAnswer:"
+        
         context = "\n\n".join([f"Trust accuracy: {chunk['score']}\nTitle: {chunk['title']}\nText: {chunk['text']}" for chunk in retrieved_chunks])
-        prompt = f"{SYS_PROMPT}\n\nContext:\n{context}\n\nQuestion: {query}\nAnswer:"
+        prompt = f"{self.prompts["Default"]}\n\nContext:\n{context}\n\nQuestion: {query}\nAnswer:"
         return prompt
     
     def generate(self, query: str, stream: bool = False) -> str | Generator:
@@ -70,6 +77,22 @@ class LLM_RAG:
             return self._streamed_response(response)
         return response.json()["response"]
     
+    def add_to_db(self, query: str) -> None:
+        """Add a new info to the database."""
+        prompt = self.format(query, retrieved_chunks= None)
+        response = requests.post(
+            self.llm_url,
+            json={"model": self.llm_name, "prompt": prompt, "stream": False},
+        )
+        response.raise_for_status()
+        response = response.json()["response"]
+        
+        title = input("Give a title to the article: ")
+            
+        # Save the article to the database
+        ingest_article(title, response)
+        
+    
     def _streamed_response(self, response: requests.Response) -> Generator:
         """Handle streaming responses from the LLM API."""
         for line in response.iter_lines():
@@ -79,13 +102,25 @@ class LLM_RAG:
             if payload.get("done"):
                 break
             yield payload["token"] if "token" in payload else payload.get("response", "")
+    
+    def handle_query(self, query: str, stream: bool = False) -> str | Generator:
+        """Single entry point: route by prefix if given, else classify via LLM."""
+        
+        if query.startswith("/add "):
+            query = query.removeprefix("/add")
             
+            self.add_to_db(query)
+            return "Added to the knowledge base."
+        
+        return self.generate(query, stream)
     
 if __name__ == "__main__":
-    llm_rag = LLM_RAG(LLM_MODEL, LLM_URL)
+    llm_rag = LLM_RAG(LLM_MODEL, LLM_URL, PROMPTS)
+    
+    print("Use '/add' to add data to db")
 
     query = input("Enter a query: ")
-    response = llm_rag.generate(query, stream=True)
+    response = llm_rag.handle_query(query, stream=True)
 
     print("LLM: ", end="")
     for chunk in response:

@@ -19,4 +19,6 @@ HNSW:
 LLM:
   Model: qwen3:1.7b
   URL: http://localhost:11434/api/generate
-  System Prompt: You are answering a question using knowledge and context. Never mention the context, unless it doesn't have enough infromations, then say so explicitly rather than guessing.
+  Prompts:
+    Default: You are answering a question using knowledge and context. Never mention the context, unless it doesn't have enough infromations, then say so explicitly rather than guessing.
+    Reformat: Rewrite the following text as a clean, well-structured encyclopedia-style article. Do not add information that isn't present in the text. Return only the article body with no preamble or commentary.
