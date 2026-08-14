@@ -38,6 +38,23 @@ def load_existing() -> tuple[list[dict], int]:
     next_id = max((a["id"] for a in existing), default=-1) + 1
     return existing, next_id
 
+def add_article(articles: list[dict], title: str, text: str) -> tuple[list[dict], dict | None]:
+    """Clean and append one new article to an in-memory articles list.
+    Returns (updated_articles, new_article_or_None). None if it's a duplicate.
+    """
+    cleaned = clean_text(text)
+    next_id = max((a["id"] for a in articles), default=-1) + 1
+
+    fingerprint = hashlib.md5(cleaned[:200].encode("utf-8")).hexdigest()
+    existing_hashes = {
+        hashlib.md5(a["text"][:200].encode("utf-8")).hexdigest() for a in articles
+    }
+    if fingerprint in existing_hashes:
+        return articles, None
+
+    new_article = {"id": next_id, "title": title.strip(), "text": cleaned}
+    return articles + [new_article], new_article
+
 
 def main() -> None:
     """Load new Wikipedia articles, clean them, and append to existing JSON."""

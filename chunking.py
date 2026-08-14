@@ -101,6 +101,23 @@ def overlap_merging(good_splits: list[str], chunk_size: int, overlap_size: int) 
 
     return overlapped
 
+def chunk_new_article(article: dict, index: int, chunk_size: int, overlap: int, start_chunk_id: int) -> list[dict]:
+    """Chunk a single article into smaller pieces and return them as a list of dicts."""
+
+    splits = recursive_chunking(article["text"], chunk_size, overlap)
+    
+    new_chunks = []
+    for i, split in enumerate(splits):
+        new_chunks.append({
+            "chunk_id": start_chunk_id + len(new_chunks),
+            "article_id": index,
+            "title": article["title"],
+            "chunk_index": i,
+            "text": split
+        })
+        
+    return new_chunks
+
 if __name__ == "__main__":
     import json
     import yaml

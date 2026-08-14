@@ -54,7 +54,7 @@ def build_tree() -> None:
     
     print(f"Saved index to {HNSW_PATH}")
     
-def update(index: hnswlib.Index):
+def update(index: hnswlib.Index) -> None:
     """Updates an existing HNSW index with new embeddings."""
     # Load new embeddings and chunks
     with open(CHUNKS_PATH, 'r', encoding= 'utf-8') as f:
@@ -88,6 +88,23 @@ def update(index: hnswlib.Index):
         yaml.safe_dump(config, f)
     
     print(f"Added {num_new} new items. Index now holds {index.get_current_count()} total.")
+    
+def add_single(index:hnswlib.Index, new_embedding: np.ndarray) -> hnswlib.Index:
+    """Adds a single new embedding to the HNSW index."""
+    current_num_elements = index.get_current_count()
+    num_new = new_embedding.shape[0]
+    
+    if num_new == 0:
+        print("No new embedding to add.")
+        return index
+    
+    if current_num_elements + num_new >= index.get_max_elements():
+        index.resize_index(2*(current_num_elements + num_new))
+        
+    new_ids = np.arange(current_num_elements, current_num_elements + num_new)
+    index.add_items(new_embedding, new_ids)
+    
+    return index
     
 if __name__ == "__main__":
     index_file_exists = HNSW_PATH.is_file() and HNSW_PATH.stat().st_size > 0
