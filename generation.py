@@ -110,7 +110,7 @@ class LLM_RAG:
             query = query.removeprefix("/add")
             
             self.add_to_db(query)
-            return "Added to the knowledge base."
+            return "Added to the knowledge base. Restart the session to update db"
         
         return self.generate(query, stream)
     

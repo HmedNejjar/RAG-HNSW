@@ -13,12 +13,16 @@ HNSW:
   Max Edges: 16
   Savepath: Retrieval\hnsw_index.bin
   dim: 384
-  number of elements: 48033
-  top_k: 3
-
+  number of elements: 50861
+  top_k: 5
 LLM:
   Model: qwen3:1.7b
-  URL: http://localhost:11434/api/generate
   Prompts:
-    Default: You are answering a question using knowledge and context. Never mention the context, unless it doesn't have enough infromations, then say so explicitly rather than guessing.
-    Reformat: Rewrite the following text as a clean, well-structured encyclopedia-style article. Do not add information that isn't present in the text. Return only the article body with no preamble or commentary.
+    Default: Answer the question using your own knowledge when you are confident.
+      If the answer is not known well enough, use the provided context. Never mention
+      the context unless the information is missing or insufficient. When you know
+      the answer, answer directly and do not reference the context.
+    Reformat: Rewrite the following text as a clean, well-structured encyclopedia-style
+      article. Do not add information that isn't present in the text. Return only
+      the article body with no preamble or commentary.
+  URL: http://localhost:11434/api/generate
