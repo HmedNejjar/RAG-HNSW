@@ -10,6 +10,7 @@ with open(ROOT / "config.yaml", 'r') as f:
     config = yaml.safe_load(f)
     
 EMBED_CONFIG = config["Embedding"]
+CHUNKS = config["Chunking"]
 MODEL = EMBED_CONFIG["Model"]
 BATCH = EMBED_CONFIG["Batch"]
 SAVE_EMBED = ROOT / EMBED_CONFIG["Savepath"]
@@ -28,7 +29,7 @@ def embed(text: list[str], model_name: str, batch_size: int) -> np.ndarray:
     return embeddings
     
 if __name__ == "__main__":
-    with open(ROOT / "Datasets\\chunks.json", 'r', encoding= "utf-8") as f:
+    with open(ROOT / CHUNKS["Savepath"], 'r', encoding= "utf-8") as f:
         chunks = json.load(f)
     print(f"Loaded {len(chunks)} chunks.")
     
