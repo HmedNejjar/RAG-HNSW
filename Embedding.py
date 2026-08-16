@@ -15,13 +15,8 @@ MODEL = EMBED_CONFIG["Model"]
 BATCH = EMBED_CONFIG["Batch"]
 SAVE_EMBED = ROOT / EMBED_CONFIG["Savepath"]
 
-def load_model(model_name: str) -> SentenceTransformer:
-    """Load a SentenceTransformer model by name."""
-    return SentenceTransformer(model_name)
-
-def embed(text: list[str], model_name: str, batch_size: int) -> np.ndarray:
+def embed(text: list[str], model: SentenceTransformer, batch_size: int) -> np.ndarray:
     """Generate embeddings for the given text using the specified model."""
-    model = load_model(model_name)
     embeddings = model.encode(text, batch_size= batch_size, show_progress_bar= True, normalize_embeddings= True, convert_to_numpy= True)
     
     print(f"Embedding matrix shape: {embeddings.shape}")
@@ -49,8 +44,8 @@ if __name__ == "__main__":
     
     else:
         texts = [c["text"] for c in new_chunks]
-    
-        embeddings = embed(texts, MODEL, BATCH)
+        model = SentenceTransformer(MODEL)
+        embeddings = embed(texts, model, BATCH)
 
         if existing is None:
             final_embeddings = embeddings

@@ -3,6 +3,7 @@ import json
 import numpy as np
 import hnswlib
 from pathlib import Path
+from sentence_transformers import SentenceTransformer
 
 from Datasets.load_ds import add_article
 from chunking import chunk_new_article
@@ -67,7 +68,8 @@ def ingest_article(title: str, text: str) -> None:
     # 3. Embedding the new chunks
     texts = [chunk["text"] for chunk in new_chunks]
     
-    new_embeddings = embed(texts, EMBED_MODEL, batch_size= BATCH)
+    embed_model = SentenceTransformer(EMBED_MODEL)
+    new_embeddings = embed(texts, embed_model, batch_size= BATCH)
     existing_embeddings = np.load(EMBED_PATH) if EMBED_PATH.exists() else None
     
     final_embeddings = (new_embeddings if existing_embeddings is None else np.vstack([existing_embeddings, new_embeddings]))
@@ -76,11 +78,16 @@ def ingest_article(title: str, text: str) -> None:
     
     # 4. Adding new embeddings to the HNSW index
     index = hnswlib.Index(space=SPACE, dim=DIM)
-    index.load_index(str(HNSW_PATH))
     
-    index = add_single(index, new_embeddings)
+    if HNSW_PATH.exists():
+        index.load_index(str(HNSW_PATH))
+        index = add_single(index, new_embeddings)
+        index.save_index(str(HNSW_PATH))
     
-    index.save_index(str(HNSW_PATH))
+    else:
+        index.init_index(max_elements= 2*final_embeddings.shape[0], M= HNSW["Max Edges"], ef_construction= HNSW["EF_construct"])
+        index.add_items(final_embeddings, np.arange(final_embeddings.shape[0]))
+        index.save_index(str(HNSW_PATH))
     
     current_count = index.get_current_count()
     with open(ROOT / "config.yaml", 'w') as f:

@@ -22,8 +22,19 @@ class Retriever:
         self.top_k = top_k
 
         # Load the HNSW index and set the EF
-        
         self.index = hnswlib.Index(space=space, dim=dim)
+        
+        # Check from dim and space consistency
+        if self.index.dim != dim:
+            raise ValueError(
+            f"Index dim ({self.index.dim}) != config dim ({dim}). "
+            f"Index was likely built with a different embedding model."
+        )
+        if self.index.space != space:
+            raise ValueError(
+                f"Index space ({self.index.space}) != config space ({space})."
+            )
+        
         self.index.load_index(str(HNSW_savepath))
         self.index.set_ef(ef_search)
         
