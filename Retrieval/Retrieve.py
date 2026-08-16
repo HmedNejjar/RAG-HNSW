@@ -54,7 +54,7 @@ class Retriever:
             
             results.append({
                         "score": float(1 - dist),
-                        "distance": dist,
+                        "distance": float(dist),
                         "chunk id": chunk_id,
                         "article id": chunk["article_id"],
                         "title": chunk["title"],
