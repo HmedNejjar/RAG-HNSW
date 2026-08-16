@@ -107,7 +107,7 @@ class LLM_RAG:
         """Single entry point: route by prefix if given, else classify via LLM."""
         
         if query.startswith("/add "):
-            query = query.removeprefix("/add")
+            query = query.removeprefix("/add").strip()
             
             self.add_to_db(query)
             return "Added to the knowledge base. Restart the session to update db"

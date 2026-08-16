@@ -1,17 +1,17 @@
 Chunking:
   Chunk size: 400
   Overlap: 50
-  Savepath: Datasets\chunks.json
+  Savepath: Datasets/chunks.json
 Embedding:
   Batch: 32
   Model: BAAI/bge-small-en-v1.5
-  Savepath: Datasets\embeddings.npy
+  Savepath: Datasets/embeddings.npy
 HNSW:
   Distance Metric: cosine
   EF_construct: 200
   EF_search: 60
   Max Edges: 16
-  Savepath: Retrieval\hnsw_index.bin
+  Savepath: Retrieval/hnsw_index.bin
   dim: 384
   number of elements: 50861
   top_k: 5
