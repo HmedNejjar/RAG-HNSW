@@ -23,6 +23,7 @@ class Retriever:
 
         # Load the HNSW index and set the EF
         self.index = hnswlib.Index(space=space, dim=dim)
+        self.index.load_index(str(HNSW_savepath))
         
         # Check from dim and space consistency
         if self.index.dim != dim:
@@ -35,7 +36,6 @@ class Retriever:
                 f"Index space ({self.index.space}) != config space ({space})."
             )
         
-        self.index.load_index(str(HNSW_savepath))
         self.index.set_ef(ef_search)
         
     def retrieve(self, query: str) -> list[dict]:
